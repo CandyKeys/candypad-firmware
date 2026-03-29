@@ -31,9 +31,50 @@ jobs:
       - name: Collect firmware (.bin)
         run: |
           mkdir -p /tmp/firmware_out
-          cp /root/qmk_firmware/*.bin /tmp/firmware_out/ 2>/dev/null || true
+          mkdir -p /tmp/firmware_candidates
+
+          # Prefer native .bin outputs from common QMK locations
+          cp /root/qmk_firmware/*.bin /tmp/firmware_candidates/ 2>/dev/null || true
+          cp /root/qmk_firmware/.build/*.bin /tmp/firmware_candidates/ 2>/dev/null || true
+
+          # Fallback: derive .bin from .elf
+          if [ -z "$(ls -A /tmp/firmware_candidates 2>/dev/null)" ]; then
+            ELF_FILE="$(ls /root/qmk_firmware/.build/*.elf 2>/dev/null | head -n 1)"
+            if [ -z "$ELF_FILE" ]; then
+              ELF_FILE="$(ls /root/qmk_firmware/*.elf 2>/dev/null | head -n 1)"
+            fi
+
+            if [ -n "$ELF_FILE" ]; then
+              OBJCPY_BIN="$(command -v arm-none-eabi-objcopy || command -v llvm-objcopy || command -v objcopy)"
+              if [ -n "$OBJCPY_BIN" ]; then
+                OUT_BIN="/tmp/firmware_candidates/$(basename "$ELF_FILE" .elf).bin"
+                "$OBJCPY_BIN" -O binary "$ELF_FILE" "$OUT_BIN" || true
+              fi
+            fi
+          fi
+
+          # Fallback: derive .bin from .hex
+          if [ -z "$(ls -A /tmp/firmware_candidates 2>/dev/null)" ]; then
+            HEX_FILE="$(ls /root/qmk_firmware/.build/*.hex 2>/dev/null | head -n 1)"
+            if [ -z "$HEX_FILE" ]; then
+              HEX_FILE="$(ls /root/qmk_firmware/*.hex 2>/dev/null | head -n 1)"
+            fi
+
+            if [ -n "$HEX_FILE" ]; then
+              OBJCPY_BIN="$(command -v arm-none-eabi-objcopy || command -v llvm-objcopy || command -v objcopy)"
+              if [ -n "$OBJCPY_BIN" ]; then
+                OUT_BIN="/tmp/firmware_candidates/$(basename "$HEX_FILE" .hex).bin"
+                "$OBJCPY_BIN" -I ihex -O binary "$HEX_FILE" "$OUT_BIN" || true
+              fi
+            fi
+          fi
+
+          cp /tmp/firmware_candidates/*.bin /tmp/firmware_out/ 2>/dev/null || true
           if [ -z "$(ls -A /tmp/firmware_out 2>/dev/null)" ]; then
             echo "No .bin firmware produced"
+            echo "Build outputs found:"
+            ls -la /root/qmk_firmware/.build 2>/dev/null || true
+            ls -la /root/qmk_firmware 2>/dev/null || true
             exit 1
           fi
           ls -la /tmp/firmware_out/
