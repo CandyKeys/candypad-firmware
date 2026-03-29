@@ -20,11 +20,13 @@ jobs:
       - name: Fetch Binepad keyboard definitions
         run: |
           git clone --depth 1 https://github.com/binepad-global/qmk_userspace_binepad.git /tmp/binepad
-          cp -r /tmp/binepad/keyboards/binepad/ /root/qmk_firmware/keyboards/binepad/
+          mkdir -p /root/qmk_firmware/keyboards/binepad
+          cp -r /tmp/binepad/keyboards/binepad/* /root/qmk_firmware/keyboards/binepad/
 
       - name: Copy userspace keymap
         run: |
-          cp -r $GITHUB_WORKSPACE/keyboards/binepad/candypad/keymaps/my_keymap/ /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap/
+          mkdir -p /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap
+          cp -r $GITHUB_WORKSPACE/keyboards/binepad/candypad/keymaps/my_keymap/* /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap/
 
       - name: Compile firmware
         run: |
