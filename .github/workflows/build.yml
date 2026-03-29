@@ -14,14 +14,9 @@ jobs:
       - name: Checkout userspace
         uses: actions/checkout@v4
 
-      - name: Setup QMK
-        run: qmk setup -y
-
-      - name: Fetch Binepad keyboard definitions
+      - name: Setup QMK with CandyPad fork
         run: |
-          git clone --depth 1 https://github.com/binepad-global/qmk_userspace_binepad.git /tmp/binepad
-          mkdir -p /root/qmk_firmware/keyboards/binepad
-          cp -r /tmp/binepad/keyboards/binepad/* /root/qmk_firmware/keyboards/binepad/
+          qmk setup -H /root/qmk_firmware -b sr-candykeys-candypad binepad-global/qmk_firmware -y
 
       - name: Copy userspace keymap
         run: |
