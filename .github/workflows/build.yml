@@ -28,6 +28,16 @@ jobs:
           cd /root/qmk_firmware
           qmk compile -kb binepad/candypad -km my_keymap
 
+      - name: Convert to .hex
+        run: |
+          cd /root/qmk_firmware
+          for f in *.bin *.uf2 *.elf; do
+            [ -f "$f" ] && arm-none-eabi-objcopy -O ihex "$f" "${f%.*}.hex" 2>/dev/null || true
+          done
+          if [ ! -f *.hex ]; then
+            arm-none-eabi-objcopy -O ihex .build/obj_binepad_candypad_my_keymap/*.elf binepad_candypad_my_keymap.hex 2>/dev/null || true
+          fi
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
