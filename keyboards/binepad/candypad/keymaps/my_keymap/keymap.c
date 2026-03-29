@@ -63,12 +63,6 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 };
 #endif
 
-bool encoder_update_user(uint8_t index, bool clockwise) {
-    // Encoder press actions are handled by the matrix keymap.
-    // This callback handles any custom press-in-software fallback.
-    return true; // let QMK handle CW/CCW via encoder_map
-}
-
 
 
 static int8_t oled_vol = 5; // 0-10, tracked via encoder

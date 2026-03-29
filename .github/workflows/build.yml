@@ -28,29 +28,12 @@ jobs:
           cd /root/qmk_firmware
           qmk compile -kb binepad/candypad -km my_keymap
 
-      - name: List build outputs
+      - name: Collect firmware
         run: |
-          echo "=== Root firmware files ==="
-          ls -la /root/qmk_firmware/*.bin /root/qmk_firmware/*.hex /root/qmk_firmware/*.uf2 2>/dev/null || true
-          echo "=== .build directory ==="
-          find /root/qmk_firmware/.build -type f \( -name "*.bin" -o -name "*.hex" -o -name "*.uf2" -o -name "*.elf" \) 2>/dev/null || true
-
-      - name: Convert to bin if needed
-        run: |
-          cd /root/qmk_firmware
           mkdir -p /tmp/firmware_out
-          # Copy any .bin from root
-          cp *.bin /tmp/firmware_out/ 2>/dev/null || true
-          # If no .bin found, convert from .elf
-          if [ -z "$(ls /tmp/firmware_out/*.bin 2>/dev/null)" ]; then
-            ELF=$(find .build -name "*.elf" | head -1)
-            if [ -n "$ELF" ]; then
-              arm-none-eabi-objcopy -O binary "$ELF" /tmp/firmware_out/candypad_firmware.bin
-            fi
-          fi
-          # Also copy any .uf2 or .hex as fallback
-          cp *.uf2 /tmp/firmware_out/ 2>/dev/null || true
-          cp *.hex /tmp/firmware_out/ 2>/dev/null || true
+          cp /root/qmk_firmware/*.uf2 /tmp/firmware_out/ 2>/dev/null || true
+          cp /root/qmk_firmware/*.bin /tmp/firmware_out/ 2>/dev/null || true
+          cp /root/qmk_firmware/*.hex /tmp/firmware_out/ 2>/dev/null || true
           ls -la /tmp/firmware_out/
 
       - name: Upload firmware
