@@ -1,86 +1,20 @@
-name: Build CandyPad Firmware
+name: Build QMK firmware
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: ghcr.io/qmk/qmk_cli
+    name: 'QMK Userspace Build'
+    uses: qmk/.github/.github/workflows/qmk_userspace_build.yml@main
+    with:
+      qmk_repo: binepad-global/qmk_firmware
+      qmk_ref: sr-candykeys-candypad
 
-    steps:
-      - name: Checkout userspace
-        uses: actions/checkout@v4
-
-      - name: Setup QMK with CandyPad fork
-        run: |
-          qmk setup -H /root/qmk_firmware -b sr-candykeys-candypad binepad-global/qmk_firmware -y
-
-      - name: Copy userspace keymap
-        run: |
-          mkdir -p /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap
-          cp -r $GITHUB_WORKSPACE/keyboards/binepad/candypad/keymaps/my_keymap/* /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap/
-
-      - name: Compile firmware
-        run: |
-          cd /root/qmk_firmware
-          qmk compile -kb binepad/candypad -km my_keymap
-
-      - name: Collect firmware (.bin)
-        run: |
-          mkdir -p /tmp/firmware_out
-          mkdir -p /tmp/firmware_candidates
-
-          # Prefer native .bin outputs from common QMK locations
-          cp /root/qmk_firmware/*.bin /tmp/firmware_candidates/ 2>/dev/null || true
-          cp /root/qmk_firmware/.build/*.bin /tmp/firmware_candidates/ 2>/dev/null || true
-
-          # Fallback: derive .bin from .elf
-          if [ -z "$(ls -A /tmp/firmware_candidates 2>/dev/null)" ]; then
-            ELF_FILE="$(ls /root/qmk_firmware/.build/*.elf 2>/dev/null | head -n 1)"
-            if [ -z "$ELF_FILE" ]; then
-              ELF_FILE="$(ls /root/qmk_firmware/*.elf 2>/dev/null | head -n 1)"
-            fi
-
-            if [ -n "$ELF_FILE" ]; then
-              OBJCPY_BIN="$(command -v arm-none-eabi-objcopy || command -v llvm-objcopy || command -v objcopy)"
-              if [ -n "$OBJCPY_BIN" ]; then
-                OUT_BIN="/tmp/firmware_candidates/$(basename "$ELF_FILE" .elf).bin"
-                "$OBJCPY_BIN" -O binary "$ELF_FILE" "$OUT_BIN" || true
-              fi
-            fi
-          fi
-
-          # Fallback: derive .bin from .hex
-          if [ -z "$(ls -A /tmp/firmware_candidates 2>/dev/null)" ]; then
-            HEX_FILE="$(ls /root/qmk_firmware/.build/*.hex 2>/dev/null | head -n 1)"
-            if [ -z "$HEX_FILE" ]; then
-              HEX_FILE="$(ls /root/qmk_firmware/*.hex 2>/dev/null | head -n 1)"
-            fi
-
-            if [ -n "$HEX_FILE" ]; then
-              OBJCPY_BIN="$(command -v arm-none-eabi-objcopy || command -v llvm-objcopy || command -v objcopy)"
-              if [ -n "$OBJCPY_BIN" ]; then
-                OUT_BIN="/tmp/firmware_candidates/$(basename "$HEX_FILE" .hex).bin"
-                "$OBJCPY_BIN" -I ihex -O binary "$HEX_FILE" "$OUT_BIN" || true
-              fi
-            fi
-          fi
-
-          cp /tmp/firmware_candidates/*.bin /tmp/firmware_out/ 2>/dev/null || true
-          if [ -z "$(ls -A /tmp/firmware_out 2>/dev/null)" ]; then
-            echo "No .bin firmware produced"
-            echo "Build outputs found:"
-            ls -la /root/qmk_firmware/.build 2>/dev/null || true
-            ls -la /root/qmk_firmware 2>/dev/null || true
-            exit 1
-          fi
-          ls -la /tmp/firmware_out/
-
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: candypad-firmware
-          path: /tmp/firmware_out/*
+  publish:
+    name: 'QMK Userspace Publish'
+    uses: qmk/.github/.github/workflows/qmk_userspace_publish.yml@main
+    if: always() && !cancelled()
+    needs: build
