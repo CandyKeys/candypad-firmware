@@ -28,12 +28,14 @@ jobs:
           cd /root/qmk_firmware
           qmk compile -kb binepad/candypad -km my_keymap
 
-      - name: Collect firmware
+      - name: Collect firmware (.bin)
         run: |
           mkdir -p /tmp/firmware_out
-          cp /root/qmk_firmware/*.uf2 /tmp/firmware_out/ 2>/dev/null || true
           cp /root/qmk_firmware/*.bin /tmp/firmware_out/ 2>/dev/null || true
-          cp /root/qmk_firmware/*.hex /tmp/firmware_out/ 2>/dev/null || true
+          if [ -z "$(ls -A /tmp/firmware_out 2>/dev/null)" ]; then
+            echo "No .bin firmware produced"
+            exit 1
+          fi
           ls -la /tmp/firmware_out/
 
       - name: Upload firmware
