@@ -3,7 +3,7 @@
     "build_targets": [
         [
             "binepad/candypad",
-            "binepad"
+            "my_keymap"
         ]
     ]
 }
