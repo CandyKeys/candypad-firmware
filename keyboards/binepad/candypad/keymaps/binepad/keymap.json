@@ -28,8 +28,5 @@
          "KC_P0",             "KC_PDOT"           ]
     ],
     "layout": "LAYOUT",
-    "modules": [
-        "silvinor/sr_version"
-    ],
     "version": 1
 }
