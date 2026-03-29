@@ -8,19 +8,28 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: qmkfm/qmk_cli
+    container: ghcr.io/qmk/qmk_cli
 
     steps:
       - name: Checkout userspace
         uses: actions/checkout@v4
 
       - name: Setup QMK
+        run: qmk setup -y
+
+      - name: Fetch Binepad keyboard definitions
         run: |
-          qmk setup -y
-          ln -s $GITHUB_WORKSPACE/keyboards/ $HOME/qmk_firmware/keyboards/ 2>/dev/null || true
+          git clone --depth 1 https://github.com/binepad-global/qmk_userspace_binepad.git /tmp/binepad
+          cp -r /tmp/binepad/keyboards/binepad/ /root/qmk_firmware/keyboards/binepad/
+
+      - name: Copy userspace keymap
+        run: |
+          cp -r $GITHUB_WORKSPACE/keyboards/binepad/candypad/keymaps/my_keymap/ /root/qmk_firmware/keyboards/binepad/candypad/keymaps/my_keymap/
 
       - name: Compile firmware
-        run: qmk compile -kb binepad/candypad -km my_keymap
+        run: |
+          cd /root/qmk_firmware
+          qmk compile -kb binepad/candypad -km my_keymap
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
