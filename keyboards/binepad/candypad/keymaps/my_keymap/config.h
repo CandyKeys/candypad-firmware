@@ -5,7 +5,9 @@
 #define DYNAMIC_KEYMAP_LAYER_COUNT 4
 
 // OLED
+#undef OLED_TIMEOUT
 #define OLED_TIMEOUT 60000  // 60 s idle off
+#undef OLED_BRIGHTNESS
 #define OLED_BRIGHTNESS 128
 
 // Encoders
