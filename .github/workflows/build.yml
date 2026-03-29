@@ -31,18 +31,16 @@ jobs:
       - name: Convert to .hex
         run: |
           cd /root/qmk_firmware
-          for f in *.bin *.uf2 *.elf; do
-            [ -f "$f" ] && arm-none-eabi-objcopy -O ihex "$f" "${f%.*}.hex" 2>/dev/null || true
-          done
-          if [ ! -f *.hex ]; then
-            arm-none-eabi-objcopy -O ihex .build/obj_binepad_candypad_my_keymap/*.elf binepad_candypad_my_keymap.hex 2>/dev/null || true
+          ELF_FILE=$(find .build -name "*.elf" | head -1)
+          if [ -n "$ELF_FILE" ]; then
+            arm-none-eabi-objcopy -O ihex "$ELF_FILE" binepad_candypad_my_keymap.hex
+            echo "Converted $ELF_FILE to .hex"
+          else
+            echo "No .elf file found!" && exit 1
           fi
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: candypad-firmware
-          path: |
-            /root/qmk_firmware/*.hex
-            /root/qmk_firmware/*.bin
-            /root/qmk_firmware/*.uf2
+          path: /root/qmk_firmware/*.hex
