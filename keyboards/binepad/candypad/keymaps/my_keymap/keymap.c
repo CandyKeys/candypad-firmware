@@ -81,7 +81,7 @@ void render_bongo_cat(void) {
     if (bongo_tapping) {
         // Tap frame — paws down
         oled_set_cursor(6, 0);
-        oled_write_P(PSTR("/\_/\"), false);
+        oled_write_P(PSTR("/\\_/\\"), false);
         oled_set_cursor(5, 1);
         oled_write_P(PSTR("( o.o )"), false);
         oled_set_cursor(5, 2);
@@ -93,7 +93,7 @@ void render_bongo_cat(void) {
     } else {
         // Idle frame — paws up
         oled_set_cursor(6, 0);
-        oled_write_P(PSTR("/\_/\"), false);
+        oled_write_P(PSTR("/\\_/\\"), false);
         oled_set_cursor(5, 1);
         oled_write_P(PSTR("( -.- )"), false);
         oled_set_cursor(5, 2);
