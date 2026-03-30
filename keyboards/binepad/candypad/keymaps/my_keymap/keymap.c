@@ -65,9 +65,56 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 
 
 
-static int8_t oled_vol = 5; // 0-10, tracked via encoder
 
 
+// ── Bongo Cat Animation ─────────────────────────────────
+static uint32_t bongo_timer = 0;
+static bool bongo_tapping = false;
+
+void render_bongo_cat(void) {
+    if (bongo_tapping && timer_elapsed32(bongo_timer) > 200) {
+        bongo_tapping = false;
+    }
+
+    oled_clear();
+
+    if (bongo_tapping) {
+        // Tap frame — paws down
+        oled_set_cursor(6, 0);
+        oled_write_P(PSTR("/\_/\"), false);
+        oled_set_cursor(5, 1);
+        oled_write_P(PSTR("( o.o )"), false);
+        oled_set_cursor(5, 2);
+        oled_write_P(PSTR(" > ^ < "), false);
+        oled_set_cursor(4, 3);
+        oled_write_P(PSTR("/|") , false);
+        oled_set_cursor(13, 3);
+        oled_write_P(PSTR("|\\") , false);
+    } else {
+        // Idle frame — paws up
+        oled_set_cursor(6, 0);
+        oled_write_P(PSTR("/\_/\"), false);
+        oled_set_cursor(5, 1);
+        oled_write_P(PSTR("( -.- )"), false);
+        oled_set_cursor(5, 2);
+        oled_write_P(PSTR(" > ^ <"), false);
+        oled_set_cursor(5, 3);
+        oled_write_P(PSTR("  /_/"), false);
+    }
+
+    // WPM counter on the right side
+    oled_set_cursor(16, 1);
+    oled_write_P(PSTR("WPM"), false);
+    oled_set_cursor(16, 2);
+    char wpm_str[4];
+    itoa(get_current_wpm(), wpm_str, 10);
+    oled_write(wpm_str, true);
+}
+
+void bongo_cat_tap(void) {
+    bongo_tapping = true;
+    bongo_timer = timer_read32();
+}
 
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -75,64 +122,15 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 bool oled_task_user(void) {
-    // Row 0: frame line (handled by pixel writes below)
-    // Row 1: LAYER [n]    ENC1 [mode]
-    oled_set_cursor(0, 1);
-    oled_write_P(PSTR("LAYER"), false);
-    oled_set_cursor(6, 1);
-    char layer_str[2] = {'0' + get_highest_layer(layer_state), '\0'};
-    oled_write(layer_str, true); // inverted
-    oled_set_cursor(13, 1);
-    oled_write_P(PSTR("ENC1"), false);
-    oled_set_cursor(18, 1);
-    oled_write_P(PSTR("VOL"), true); // inverted — resolved from encoder CW
-    // Row 3: lock indicators + ENC2
-    oled_set_cursor(4, 3);
-    led_t led_state = host_keyboard_led_state();
-    oled_write_P(PSTR("NUM"), led_state.num_lock);
-    oled_set_cursor(13, 3);
-    oled_write_P(PSTR("ENC2"), false);
-    oled_set_cursor(18, 3);
-    oled_write_P(PSTR("WHL"), true); // inverted — resolved from encoder CW
-
-
-
-    // Volume bar
-    oled_set_cursor(0, 3);
-    oled_write_P(PSTR("VOL "), false);
-    for (uint8_t i = 0; i < 10; i++) {
-        oled_write_char(i < oled_vol ? 0xFF : '-', false);
-    }
-
-
-    // Matrix visualization (bottom-left corner)
-    // Render 4x5 key matrix as dots at pixel level
-    static const uint8_t mx = 2, my = 25;
-    for (uint8_t r = 0; r < 5; r++) {
-        for (uint8_t c = 0; c < 4; c++) {
-            if ((c == 2 && r == 3) || (c == 3 && (r == 0 || r == 3))) continue;
-            oled_write_pixel(mx + c * 2, my + r * 2, true);
-        }
-    }
-    // 2U keys
-    oled_write_pixel(mx + 3 * 2, my + 2 * 2, true);
-    oled_write_pixel(mx + 3 * 2, my + 4 * 2, true);
-    oled_write_pixel(mx, my + 4 * 2, true);
-
-
-
-    // Decorative frame lines around inverted text
-    // Layer box
-    for (uint8_t x = 36; x <= 42; x++) oled_write_pixel(x, 7, true);
-    for (uint8_t y = 8; y <= 15; y++) oled_write_pixel(36, y, true);
-    // ENC1 box
-    for (uint8_t x = 108; x <= 127; x++) oled_write_pixel(x, 7, true);
-    for (uint8_t y = 8; y <= 15; y++) oled_write_pixel(108, y, true);
-    // ENC2 box  
-    for (uint8_t x = 108; x <= 127; x++) oled_write_pixel(x, 23, true);
-    for (uint8_t y = 24; y <= 31; y++) oled_write_pixel(108, y, true);
-
+    render_bongo_cat();
     return false;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        bongo_cat_tap();
+    }
+    return true;
 }
 
 
