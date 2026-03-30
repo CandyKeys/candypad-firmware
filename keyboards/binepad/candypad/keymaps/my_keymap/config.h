@@ -6,7 +6,7 @@
 
 // OLED
 #undef OLED_TIMEOUT
-#define OLED_TIMEOUT 60000  // 60 s idle off
+#define OLED_TIMEOUT 30000
 #undef OLED_BRIGHTNESS
 #define OLED_BRIGHTNESS 128
 
