@@ -75,25 +75,11 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 bool oled_task_user(void) {
-    // Row 0: frame line (handled by pixel writes below)
-    // Row 1: LAYER [n]    ENC1 [mode]
-    oled_set_cursor(0, 1);
-    oled_write_P(PSTR("LAYER"), false);
-    oled_set_cursor(6, 1);
-    char layer_str[2] = {'0' + get_highest_layer(layer_state), '\0'};
-    oled_write(layer_str, true); // inverted
-    oled_set_cursor(13, 1);
-    oled_write_P(PSTR("ENC1"), false);
-    oled_set_cursor(18, 1);
-    oled_write_P(PSTR("VOL"), true); // inverted — resolved from encoder CW
-    // Row 3: lock indicators + ENC2
-    oled_set_cursor(4, 3);
-    led_t led_state = host_keyboard_led_state();
-    oled_write_P(PSTR("NUM"), led_state.num_lock);
-    oled_set_cursor(13, 3);
-    oled_write_P(PSTR("ENC2"), false);
-    oled_set_cursor(18, 3);
-    oled_write_P(PSTR("WHL"), true); // inverted — resolved from encoder CW
+    // Let the board's candypad_oled.c render the default dashboard
+    return true; // true = let board render default dashboard, false = we handled it ourselves
+}
+
+bool candypad_render_default_user(void) {
 
 
 
@@ -105,34 +91,7 @@ bool oled_task_user(void) {
     }
 
 
-    // Matrix visualization (bottom-left corner)
-    // Render 4x5 key matrix as dots at pixel level
-    static const uint8_t mx = 2, my = 25;
-    for (uint8_t r = 0; r < 5; r++) {
-        for (uint8_t c = 0; c < 4; c++) {
-            if ((c == 2 && r == 3) || (c == 3 && (r == 0 || r == 3))) continue;
-            oled_write_pixel(mx + c * 2, my + r * 2, true);
-        }
-    }
-    // 2U keys
-    oled_write_pixel(mx + 3 * 2, my + 2 * 2, true);
-    oled_write_pixel(mx + 3 * 2, my + 4 * 2, true);
-    oled_write_pixel(mx, my + 4 * 2, true);
-
-
-
-    // Decorative frame lines around inverted text
-    // Layer box
-    for (uint8_t x = 36; x <= 42; x++) oled_write_pixel(x, 7, true);
-    for (uint8_t y = 8; y <= 15; y++) oled_write_pixel(36, y, true);
-    // ENC1 box
-    for (uint8_t x = 108; x <= 127; x++) oled_write_pixel(x, 7, true);
-    for (uint8_t y = 8; y <= 15; y++) oled_write_pixel(108, y, true);
-    // ENC2 box  
-    for (uint8_t x = 108; x <= 127; x++) oled_write_pixel(x, 23, true);
-    for (uint8_t y = 24; y <= 31; y++) oled_write_pixel(108, y, true);
-
-    return false;
+    return false; // false = let board continue with its default rendering
 }
 
 
