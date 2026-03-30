@@ -65,9 +65,56 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 
 
 
-static int8_t oled_vol = 5; // 0-10, tracked via encoder
 
 
+// ── Bongo Cat Animation ─────────────────────────────────
+static uint32_t bongo_timer = 0;
+static bool bongo_tapping = false;
+
+void render_bongo_cat(void) {
+    if (bongo_tapping && timer_elapsed32(bongo_timer) > 200) {
+        bongo_tapping = false;
+    }
+
+    oled_clear();
+
+    if (bongo_tapping) {
+        // Tap frame — paws down
+        oled_set_cursor(6, 0);
+        oled_write_P(PSTR("/\_/\"), false);
+        oled_set_cursor(5, 1);
+        oled_write_P(PSTR("( o.o )"), false);
+        oled_set_cursor(5, 2);
+        oled_write_P(PSTR(" > ^ < "), false);
+        oled_set_cursor(4, 3);
+        oled_write_P(PSTR("/|") , false);
+        oled_set_cursor(13, 3);
+        oled_write_P(PSTR("|\\") , false);
+    } else {
+        // Idle frame — paws up
+        oled_set_cursor(6, 0);
+        oled_write_P(PSTR("/\_/\"), false);
+        oled_set_cursor(5, 1);
+        oled_write_P(PSTR("( -.- )"), false);
+        oled_set_cursor(5, 2);
+        oled_write_P(PSTR(" > ^ <"), false);
+        oled_set_cursor(5, 3);
+        oled_write_P(PSTR("  /_/"), false);
+    }
+
+    // WPM counter on the right side
+    oled_set_cursor(16, 1);
+    oled_write_P(PSTR("WPM"), false);
+    oled_set_cursor(16, 2);
+    char wpm_str[4];
+    itoa(get_current_wpm(), wpm_str, 10);
+    oled_write(wpm_str, true);
+}
+
+void bongo_cat_tap(void) {
+    bongo_tapping = true;
+    bongo_timer = timer_read32();
+}
 
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -75,23 +122,15 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 bool oled_task_user(void) {
-    // Let the board's candypad_oled.c render the default dashboard
-    return true; // true = let board render default dashboard, false = we handled it ourselves
+    render_bongo_cat();
+    return false; // true = let board render default dashboard, false = we handled it ourselves
 }
 
-bool candypad_render_default_user(void) {
-
-
-
-    // Volume bar
-    oled_set_cursor(0, 3);
-    oled_write_P(PSTR("VOL "), false);
-    for (uint8_t i = 0; i < 10; i++) {
-        oled_write_char(i < oled_vol ? 0xFF : '-', false);
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        bongo_cat_tap();
     }
-
-
-    return false; // false = let board continue with its default rendering
+    return true;
 }
 
 
