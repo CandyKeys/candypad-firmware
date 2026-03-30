@@ -66,55 +66,9 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 
 
 
+static uint16_t key_press_counts[MATRIX_ROWS][MATRIX_COLS] = {0};
+static uint16_t max_press_count = 1;
 
-// ── Bongo Cat Animation ─────────────────────────────────
-static uint32_t bongo_timer = 0;
-static bool bongo_tapping = false;
-
-void render_bongo_cat(void) {
-    if (bongo_tapping && timer_elapsed32(bongo_timer) > 200) {
-        bongo_tapping = false;
-    }
-
-    oled_clear();
-
-    if (bongo_tapping) {
-        // Tap frame — paws down
-        oled_set_cursor(6, 0);
-        oled_write_P(PSTR("/\\_/\\"), false);
-        oled_set_cursor(5, 1);
-        oled_write_P(PSTR("( o.o )"), false);
-        oled_set_cursor(5, 2);
-        oled_write_P(PSTR(" > ^ < "), false);
-        oled_set_cursor(4, 3);
-        oled_write_P(PSTR("/|") , false);
-        oled_set_cursor(13, 3);
-        oled_write_P(PSTR("|\\") , false);
-    } else {
-        // Idle frame — paws up
-        oled_set_cursor(6, 0);
-        oled_write_P(PSTR("/\\_/\\"), false);
-        oled_set_cursor(5, 1);
-        oled_write_P(PSTR("( -.- )"), false);
-        oled_set_cursor(5, 2);
-        oled_write_P(PSTR(" > ^ <"), false);
-        oled_set_cursor(5, 3);
-        oled_write_P(PSTR("  /_/"), false);
-    }
-
-    // WPM counter on the right side
-    oled_set_cursor(16, 1);
-    oled_write_P(PSTR("WPM"), false);
-    oled_set_cursor(16, 2);
-    char wpm_str[4];
-    itoa(get_current_wpm(), wpm_str, 10);
-    oled_write(wpm_str, true);
-}
-
-void bongo_cat_tap(void) {
-    bongo_tapping = true;
-    bongo_timer = timer_read32();
-}
 
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
@@ -122,13 +76,43 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 bool oled_task_user(void) {
-    render_bongo_cat();
+
+    // Heatmap visualization — full screen
+    oled_set_cursor(0, 0);
+    oled_write_P(PSTR("KEY HEATMAP"), true);
+    oled_set_cursor(0, 1);
+    oled_write_P(PSTR("Per-column presses:"), false);
+    oled_set_cursor(0, 2);
+    for (uint8_t c = 0; c < MATRIX_COLS; c++) {
+        uint16_t col_total = 0;
+        for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
+            col_total += key_press_counts[r][c];
+        }
+        uint8_t bar = (col_total * 8) / (max_press_count > 0 ? max_press_count * MATRIX_ROWS : 1);
+        if (bar > 8) bar = 8;
+        oled_write_char('0' + bar, col_total > 0);
+        oled_write_char(' ', false);
+    }
+    oled_set_cursor(0, 3);
+    char total_str[12];
+    uint32_t total = 0;
+    for (uint8_t r = 0; r < MATRIX_ROWS; r++)
+        for (uint8_t c = 0; c < MATRIX_COLS; c++)
+            total += key_press_counts[r][c];
+    snprintf(total_str, sizeof(total_str), "TOTAL:%lu", (unsigned long)total);
+    oled_write(total_str, false);
+
     return false; // true = let board render default dashboard, false = we handled it ourselves
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (record->event.pressed) {
-        bongo_cat_tap();
+        uint8_t row = record->event.key.row;
+        uint8_t col = record->event.key.col;
+        key_press_counts[row][col]++;
+        if (key_press_counts[row][col] > max_press_count) {
+            max_press_count = key_press_counts[row][col];
+        }
     }
     return true;
 }
