@@ -6,9 +6,13 @@
 
 // OLED
 #undef OLED_TIMEOUT
-#define OLED_TIMEOUT 30000
+#define OLED_TIMEOUT 120000
 #undef OLED_BRIGHTNESS
 #define OLED_BRIGHTNESS 128
 
 // Encoders
 #define ENCODER_DEFAULT_POS 0x3  // 1:1 resolution
+
+// RAW HID (companion app)
+#define RAW_USAGE_PAGE 0xFF60
+#define RAW_USAGE_ID   0x61

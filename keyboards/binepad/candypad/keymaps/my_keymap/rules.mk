@@ -7,7 +7,7 @@ ENCODER_MAP_ENABLE = yes
 MOUSEKEY_ENABLE    = no
 RGBLIGHT_ENABLE    = no
 WPM_ENABLE         = no
-RAW_ENABLE         = no
+RAW_ENABLE         = yes
 
 # Keep firmware size in check
 LTO_ENABLE         = yes
