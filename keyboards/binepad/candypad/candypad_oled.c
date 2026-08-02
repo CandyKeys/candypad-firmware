@@ -33,10 +33,13 @@ static char *get_enc_mode(uint8_t encoder) {
             return " - ";
             break;
 
+#        ifdef MOUSEKEY_ENABLE
         case KC_WH_U:
         case KC_WH_D:
             return "WHL";
             break;
+#        endif
+
 
         case KC_VOLD:
         case KC_VOLU:
